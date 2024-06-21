@@ -200,7 +200,7 @@ cd Development/apache-jmeter-5.6.3/bin
 
 # Change the connection URL to the private IP
 
-vi CloudSql-Initial-Load.jmx
+vi CloudSQL-Initial-Load.jmx
 #Change XX.XX.XXX.XXX to private ip of the Cloud SQL instance
 <stringProp name="dbUrl">jdbc:postgresql://XX.XX.XXX.XXX/singers</stringProp>
 
@@ -212,10 +212,10 @@ vi CloudSQL-PT.jmx.jmx
 
 #If the database isnt populated then populate with dummy data 
 
-./jmeter -n -t CloudSql-Initial-Load.jmx -l load-out.csv -Jusers=1000 -Jiterations=1000
+./jmeter -n -t CloudSQL-Initial-Load.jmx -l load-out.csv -Jusers=1000 -Jiterations=1000
 
 # Run preformance test 
-./jmeter -n -t CloudSQLPT.jmx -l test-out.csv -Jusers=100 -Jduration=900
+./jmeter -n -t CloudSQL-PT.jmx -l test-out.csv -Jusers=100 -Jduration=900
 
 ______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
