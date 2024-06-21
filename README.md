@@ -22,7 +22,7 @@ gcloud compute instances create test-jmeter \ --zone=us-central1-a \ --machine-t
 
 SSH into the VM: 
 
-#download Java 
+# download Java 
 
 wget https://download.oracle.com/java/22/latest/jdk-22_linux-x64_bin.deb
 
@@ -31,13 +31,13 @@ sudo dpkg -i jdk-22_linux-x64_bin.deb
 #double check it works 
 
 java -version
-#download Maven 
+# download Maven 
 
 wget https://downloads.apache.org/maven/maven-3/3.9.7/binaries/apache-maven-3.9.7-bin.tar.gz
 
 tar -xvzf apache-maven-3.9.7-bin.tar.gz
 
-#get the jar files 
+# get the jar files 
 
 mkdir Development 
 
@@ -61,7 +61,7 @@ nano ~/.bashrc
 export MAVEN_HOME=/opt/apache-maven-3.9.7
 export PATH=$PATH:$MAVEN_HOME/bin
 
-#verify installation 
+# verify installation 
 
 mvn -version
 
@@ -72,18 +72,11 @@ tar -xvzf apache-jmeter-5.6.3.tgz
 
 mv apache-jmeter-5.6.3 ~/Development/
 
-#download the .jmx files and move them into jmeter file 
+# download the .jmx files and move them into jmeter file 
 
 mv [.jmx files] ~/Development/apache-jmeter-5.6.3.tgz/bin
 
-
-
-
-
-
-
-
-
+____________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 Spanner Instructions: 
 
@@ -118,7 +111,7 @@ CREATE TABLE Songs (
 ) PRIMARY KEY (SingerId, AlbumId, TrackId),
   INTERLEAVE IN PARENT Albums ON DELETE CASCADE;
 
-Going back to the vm:
+# Going back to the vm:
 
 cd Development 
 
@@ -132,38 +125,39 @@ cd Development
 
 mkdir spanner-jarfiles 
 
-
 # Find all .jar files in the Spanner folder and move them to spanner-jarfiles 
 
 find Spanner -type f -name "*.jar" -exec mv {} spanner-jarfiles/ \;
 
-Populate Spanner tables: 
+# Populate Spanner tables: 
 
 cd apache-jmeter-5.6.3/bin
 
 ./jmeter -n -t Spanner-Initial-Load.jmx -l spanner-il.csv -Jusers=1000 -Jiterations=1000
 
-#the output should return 200
+# the output should return 200
 vi spanner-il.csv
 
-#in Spanner Studio or gcloud to check the the population was successful
+# in Spanner Studio or gcloud to check the the population was successful
 
 select * from singers;
 
-Execute Performance Test: 
+# Execute Performance Test: 
 cd Development/apache-jmeter-5.6.3/bin
 
 ./jmeter -n -t SpannerPerformanceTest.jmx -l spanner-pt.csv -Jusers=100 -Jduration=120
 
+______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
  Cloud SQL Instructions: 
 
-#create the Cloud SQL instance and populate the database "singer" this a sample gcloud command
+# create the Cloud SQL instance and populate the database "singer" this a sample gcloud command
 
 gcloud sql instances create [INSTANCE_NAME] \ --network=default \ 
 --region=us-central1 \
 --no-assign-ip \ 	--private-network=projects/[PROJECT_ID]/global/networks/default
 
-#to connect to Cloud SQL from the VM
+# to connect to Cloud SQL from the VM
 https://cloud.google.com/sql/docs/postgres/connect-instance-private-ip
 
 CREATE DATABASE singers;
@@ -200,9 +194,21 @@ CREATE TABLE Songs (
 
 
 
-#in another window
+# in another window
 
 cd Development/apache-jmeter-5.6.3/bin
+
+# Change the connection URL to the private IP
+
+vi CloudSql-Initial-Load.jmx
+#Change XX.XX.XXX.XXX to private ip of the Cloud SQL instance
+<stringProp name="dbUrl">jdbc:postgresql://XX.XX.XXX.XXX/singers</stringProp>
+
+# Do it again for the Preformance test
+vi CloudSQL-PT.jmx.jmx
+
+#Change XX.XX.XXX.XXX to private ip of the Cloud SQL instance
+<stringProp name="dbUrl">jdbc:postgresql://XX.XX.XXX.XXX/singers</stringProp>
 
 #If the database isnt populated then populate with dummy data 
 
@@ -211,16 +217,7 @@ cd Development/apache-jmeter-5.6.3/bin
 # Run preformance test 
 ./jmeter -n -t CloudSQLPT.jmx -l test-out.csv -Jusers=100 -Jduration=900
 
-
-
-
-
-
-
-
-
-
-
+______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 
 AlloyDB Instruction: 
 
@@ -228,14 +225,14 @@ https://cloud.google.com/alloydb/docs/connect-psql
 sudo apt-get update
 sudo apt-get install postgresql-client
 
-#connect to AlloyDB 
+# connect to AlloyDB 
 psql -h [alloydb private ip] -p 5432 -U postgres
 
 create database singers;
 
 \connect singers;
 
-#create 
+# create 
 
 CREATE TABLE Singers ( 
 SingerId varchar(1024) NOT NULL, 
@@ -266,9 +263,25 @@ CREATE TABLE Songs (
 );
 
 
-#In the execution VM
+# In the execution VM
 
 cd Development/apache-jmeter-5.6.3/bin
+
+
+# Change the connection URL to the private IP
+
+vi AlloyDB-Initial-Load.jmx
+
+# Change XX.XX.XXX.XXX to private ip of the Cloud SQL instance
+<stringProp name="dbUrl">jdbc:postgresql://XX.XX.XXX.XXX/singers</stringProp>
+
+# Do it again for the Preformance test
+vi AlloyDB-PT.jmx
+
+# Change XX.XX.XXX.XXX to private ip of the AlloyDB cluster
+<stringProp name="dbUrl">jdbc:postgresql://XX.XX.XXX.XXX/singers</stringProp>
+
+# If the database isnt populated then populate with dummy data 
 
 ./jmeter -n -t AlloyDB-Initial-Load.jmx -l alloy-test.csv -Jusers=100 -Jduration=90
 
@@ -276,6 +289,7 @@ To view AlloyDB population:
 
 # https://cloud.google.com/alloydb/docs/connect-psql 
 # from the vm connect via psql client and then enter password
+# these tables should be populated 
 
 psql -h [IP_ADDRESS} -U [USERNAME]
 
@@ -285,16 +299,12 @@ SELECT * FROM albums;
 
 SELECT * FROM songs;
 
-#these tables should be populated 
 
 
-
-Trigger load test: 
+# Trigger load test: 
 
 cd Development/apache-jmeter-5.6.3/bin
 
 ./jmeter -n -t AlloyDB-PT.jmx -l alloy-pt.csv -Jusers=1000 -Jduration=120
-
-
 
 
